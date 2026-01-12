@@ -5,6 +5,7 @@ import { initAudio, playNote } from './js/audio.js'
 // State
 const state = {
   baseNote: 'G',
+  baseOctave: 4,
   duration: 0.5,
   isLooping: false,
   playingIntervalIndex: null, // Track which interval is playing
@@ -17,6 +18,7 @@ const state = {
 
 const app = document.querySelector('#app');
 const baseSelect = document.getElementById('base-note');
+const octaveSelect = document.getElementById('octave-selector');
 const intervalContainer = document.getElementById('interval-container');
 const playBaseBtn = document.getElementById('play-base');
 const durationInput = document.getElementById('duration-input');
@@ -171,6 +173,11 @@ function init() {
     state.isLooping = e.target.checked;
   });
 
+  octaveSelect.addEventListener('change', (e) => {
+    state.baseOctave = parseInt(e.target.value);
+    clearSequence(); // Reset any playing sequence
+  });
+
   // Base Note Change
   baseSelect.addEventListener('change', (e) => {
     clearSequence();
@@ -181,7 +188,7 @@ function init() {
   // Base Note Play
   playBaseBtn.addEventListener('click', () => {
     initAudio();
-    playNote(state.baseNote, 4, state.duration);
+    playNote(state.baseNote, state.baseOctave, state.duration);
   });
 
   // Global click to start audio context (browser policy)
