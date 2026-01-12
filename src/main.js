@@ -1,6 +1,7 @@
 import './style.css'
 import { NOTES, getNote, getChromaticScale } from './js/theory.js'
 import { initAudio, playNote } from './js/audio.js'
+import { AudioVisualizer } from './js/visualizer.js'
 
 // State
 const state = {
@@ -25,6 +26,8 @@ const intervalContainer = document.getElementById('interval-container');
 const playBaseBtn = document.getElementById('play-base');
 const durationInput = document.getElementById('duration-input');
 const loopToggle = document.getElementById('loop-toggle');
+const sequenceDisplay = document.getElementById('sequence-display');
+let visualizer;
 
 let currentSequenceTimeouts = [];
 
@@ -44,7 +47,13 @@ function clearSequence() {
 // NOTE: race condition fix - async to await initAudio
 async function playSequence(index) {
   clearSequence(); // Stop any existing sequence
-  await initAudio(); // Ensure audio context is ready/resumed
+  const synth = await initAudio(); // Ensure audio context is ready/resumed
+
+  // Init visualizer if needed
+  if (!visualizer) {
+    visualizer = new AudioVisualizer('analyzer');
+    visualizer.connect(synth);
+  }
 
   state.playingIntervalIndex = index;
 
@@ -66,6 +75,9 @@ async function playSequence(index) {
 
   const sequence = getChromaticScale(startNote, interval.semitones, interval.direction);
 
+  // Update Sequence Display
+  renderSequenceDisplay(sequence, startOctave);
+
   // Schedule each note
   sequence.forEach((item, stepIndex) => {
     const delay = stepIndex * state.duration * 1000;
@@ -73,10 +85,12 @@ async function playSequence(index) {
     const timeoutId = setTimeout(() => {
       // Play Sound
       // Combine startOctave (which includes anchor offset) with item's relative offset
-      playNote(item.note, startOctave + item.octaveOffset, state.duration);
+      const currentOctave = startOctave + item.octaveOffset;
+      playNote(item.note, currentOctave, state.duration);
 
       // Update UI (Visually highlight current note)
       highlightNote(index, item.note);
+      highlightSequenceNote(stepIndex);
 
       // Check if last note
       if (stepIndex === sequence.length - 1) {
@@ -91,6 +105,7 @@ async function playSequence(index) {
           const finishId = setTimeout(() => {
             state.playingIntervalIndex = null;
             renderIntervals();
+            renderSequenceDisplay([]); // Clear sequence display
           }, state.duration * 1000);
           currentSequenceTimeouts.push(finishId);
         }
@@ -99,6 +114,30 @@ async function playSequence(index) {
 
     currentSequenceTimeouts.push(timeoutId);
   });
+}
+
+function renderSequenceDisplay(sequence, startOctave) {
+  if (!sequenceDisplay) return;
+  sequenceDisplay.innerHTML = sequence.map((item, idx) => {
+    // We can mimic the octave offset logic roughly for display
+    // Since getChromaticScale gives relative offset, we can display accurate octave
+    const dispOctave = startOctave + item.octaveOffset;
+    return `<span class="seq-note" data-idx="${idx}" style="padding: 4px 8px; border-radius: 4px; background: #eee; font-size: 0.9em;">${item.note}${dispOctave}</span>`;
+  }).join('');
+}
+
+function highlightSequenceNote(idx) {
+  if (!sequenceDisplay) return;
+  // Reset previous
+  sequenceDisplay.querySelectorAll('.seq-note').forEach(el => el.style.background = '#eee');
+  sequenceDisplay.querySelectorAll('.seq-note').forEach(el => el.style.color = '#333');
+
+  // Highlight current
+  const active = sequenceDisplay.querySelector(`.seq-note[data-idx="${idx}"]`);
+  if (active) {
+    active.style.background = 'var(--primary-color)';
+    active.style.color = 'white';
+  }
 }
 
 function highlightNote(rowIndex, noteName) {

@@ -8,6 +8,7 @@ export async function initAudio() {
         synth = new Tone.PolySynth(Tone.Synth).toDestination();
         console.log("Audio initialized");
     }
+    return synth;
 }
 
 export function playNote(note, octave = 4, duration = "8n") {
