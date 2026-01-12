@@ -52,6 +52,7 @@ async function playSequence(index) {
   // Init visualizer if needed
   if (!visualizer) {
     visualizer = new AudioVisualizer('analyzer');
+    // Using visualizer.js's connect(source) logic which connects source -> waveform
     visualizer.connect(synth);
   }
 
@@ -62,7 +63,7 @@ async function playSequence(index) {
 
   const interval = state.intervals[index];
 
-  // Logic Refactor: Down starts from Base + 8 semitones
+  // Logic Refactor: Down starts from Base + 7 semitones
   let startNote = state.baseNote;
   let startOctave = state.baseOctave;
 
@@ -73,13 +74,19 @@ async function playSequence(index) {
     startOctave = state.baseOctave + anchor.octaveOffset;
   }
 
-  const sequence = getChromaticScale(startNote, interval.semitones, interval.direction);
+  // 1. Generate core linear sequence
+  const coreSequence = getChromaticScale(startNote, interval.semitones, interval.direction);
+
+  // 2. Create Palindrome (There and Back Again)
+  // Pattern: [A, B, C] -> [...Core, ...Reversed] -> [A, B, C, C, B, A]
+  const reversed = [...coreSequence].reverse();
+  const fullSequence = [...coreSequence, ...reversed];
 
   // Update Sequence Display
-  renderSequenceDisplay(sequence, startOctave);
+  renderSequenceDisplay(fullSequence, startOctave);
 
   // Schedule each note
-  sequence.forEach((item, stepIndex) => {
+  fullSequence.forEach((item, stepIndex) => {
     const delay = stepIndex * state.duration * 1000;
 
     const timeoutId = setTimeout(() => {
@@ -93,7 +100,7 @@ async function playSequence(index) {
       highlightSequenceNote(stepIndex);
 
       // Check if last note
-      if (stepIndex === sequence.length - 1) {
+      if (stepIndex === fullSequence.length - 1) {
         if (state.isLooping && state.playingIntervalIndex == index) {
           // Loop: Play again after duration
           const loopId = setTimeout(() => {
