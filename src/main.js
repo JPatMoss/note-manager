@@ -10,9 +10,11 @@ const state = {
   isLooping: false,
   playingIntervalIndex: null, // Track which interval is playing
   intervals: [
-    { id: '3rd', label: '3 Steps (Semi)', semitones: 3, direction: 'up' },
-    { id: '5th', label: '5 Steps (Semi)', semitones: 5, direction: 'up' },
-    { id: '8th', label: '8 Steps (Semi)', semitones: 8, direction: 'up' }
+    { id: '3rd', label: '3', semitones: 2, direction: 'up' },
+    { id: '5th', label: '5', semitones: 4, direction: 'up' },
+    { id: '8th', label: '8', semitones: 7, direction: 'up' },
+    { id: '10th', label: '10', semitones: 9, direction: 'up' },
+    { id: '12th', label: '12', semitones: 11, direction: 'up' }
   ]
 };
 
@@ -39,16 +41,30 @@ function clearSequence() {
   });
 }
 
-function playSequence(index) {
+// NOTE: race condition fix - async to await initAudio
+async function playSequence(index) {
   clearSequence(); // Stop any existing sequence
-  initAudio();
+  await initAudio(); // Ensure audio context is ready/resumed
+
   state.playingIntervalIndex = index;
 
   // Update UI manually to avoid full re-render
   renderIntervals();
 
   const interval = state.intervals[index];
-  const sequence = getChromaticScale(state.baseNote, interval.semitones, interval.direction);
+
+  // Logic Refactor: Down starts from Base + 8 semitones
+  let startNote = state.baseNote;
+  let startOctave = state.baseOctave;
+
+  if (interval.direction === 'down') {
+    // Calculate Anchor (Base + 7 semitones to reach the 5th/Rey/D)
+    const anchor = getNote(state.baseNote, 7, 'up');
+    startNote = anchor.note;
+    startOctave = state.baseOctave + anchor.octaveOffset;
+  }
+
+  const sequence = getChromaticScale(startNote, interval.semitones, interval.direction);
 
   // Schedule each note
   sequence.forEach((item, stepIndex) => {
@@ -56,7 +72,8 @@ function playSequence(index) {
 
     const timeoutId = setTimeout(() => {
       // Play Sound
-      playNote(item.note, 4 + item.octaveOffset, state.duration);
+      // Combine startOctave (which includes anchor offset) with item's relative offset
+      playNote(item.note, startOctave + item.octaveOffset, state.duration);
 
       // Update UI (Visually highlight current note)
       highlightNote(index, item.note);
@@ -105,7 +122,16 @@ function renderBaseOptions() {
 
 function renderIntervals() {
   intervalContainer.innerHTML = state.intervals.map((interval, index) => {
-    const result = getNote(state.baseNote, interval.semitones, interval.direction);
+    // Logic Refactor for Display Note
+    let startNote = state.baseNote;
+    // We don't need octave here for the *name* display, but let's be consistent
+    // (getNote handles wrapping, so just need correct base)
+    if (interval.direction === 'down') {
+      const anchor = getNote(state.baseNote, 7, 'up');
+      startNote = anchor.note;
+    }
+
+    const result = getNote(startNote, interval.semitones, interval.direction);
     const isUp = interval.direction === 'up';
     // Use loosely equal in case of string vs number index
     const isPlaying = state.playingIntervalIndex == index;
@@ -186,8 +212,8 @@ function init() {
   });
 
   // Base Note Play
-  playBaseBtn.addEventListener('click', () => {
-    initAudio();
+  playBaseBtn.addEventListener('click', async () => {
+    await initAudio();
     playNote(state.baseNote, state.baseOctave, state.duration);
   });
 
