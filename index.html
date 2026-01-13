@@ -14,20 +14,18 @@
 
     <div class="card">
       <div class="base-selector">
-        <label for="base-note">Base Note</label>
-        <div style="display: flex; gap: 0.5rem; width: 100%;">
-          <select id="base-note" style="flex: 2;">
-            <!-- Populated by JS -->
-          </select>
-          <select id="octave-selector" style="flex: 1;" title="Octave">
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4" selected>4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-          </select>
-        </div>
-        <button id="play-base" class="play-btn" style="margin-top: 1rem;" title="Play Base Note">▶</button>
+        <label for="base-note" style="margin-right: 0.5rem; font-weight: bold;">Base:</label>
+        <select id="base-note" class="compact-select">
+          <!-- Populated by JS -->
+        </select>
+        <select id="octave-selector" class="compact-select" title="Octave">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+        <button id="play-base" class="play-btn" title="Play Base Note">▶</button>
       </div>
 
       <div class="controls-row"
