@@ -189,13 +189,13 @@ function renderIntervals() {
     return `
       <div class="interval-row ${isPlaying ? 'playing' : ''}" data-index="${index}">
         <div class="interval-label">${interval.label}</div>
-        <div class="toggle-group">
+        <div class="toggle-group direction-toggles">
           <button class="toggle-btn ${isUp ? 'active' : ''}" data-dir="up">Up</button>
           <button class="toggle-btn ${!isUp ? 'active' : ''}" data-dir="down">Down</button>
         </div>
-        <div class="toggle-group">
-            <button class="toggle-btn palindrome-btn ${interval.isPalindrome ? 'active' : ''}" data-action="toggle-pal">
-                ${interval.isPalindrome ? 'To & Fro' : 'Linear'}
+        <div class="toggle-group palindrome-toggles">
+            <button class="toggle-btn palindrome-btn ${interval.isPalindrome ? 'active' : ''}" data-action="toggle-pal" title="${interval.isPalindrome ? 'Palindrome Mode' : 'Linear Mode'}">
+                ${interval.isPalindrome ? '⟲' : '→'}
             </button>
         </div>
         <div class="note-display">${result.note}</div>
