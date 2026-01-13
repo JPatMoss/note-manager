@@ -50,18 +50,24 @@ export class AudioVisualizer {
         this.ctx.strokeStyle = '#646cff'; // Primary color
         this.ctx.beginPath();
 
-        const sliceWidth = width * 1.0 / values.length;
+        // Zero-crossing detection to stabilize waveform
+        let startIndex = 0;
+        // Find first zero crossing (going from negative to positive)
+        for (let i = 1; i < values.length - 1; i++) {
+            if (values[i] >= 0 && values[i - 1] < 0) {
+                startIndex = i;
+                break;
+            }
+        }
+
+        const sliceWidth = width * 1.0 / (values.length - startIndex);
         let x = 0;
 
-        for (let i = 0; i < values.length; i++) {
+        for (let i = startIndex; i < values.length; i++) {
             const v = values[i];
-            // values are roughly -1 to 1. Map to height.
-            // value 0 -> height/2
-            // value 1 -> 0
-            // value -1 -> height
             const y = (1 - v) * height / 2;
 
-            if (i === 0) {
+            if (i === startIndex) {
                 this.ctx.moveTo(x, y);
             } else {
                 this.ctx.lineTo(x, y);
@@ -70,7 +76,6 @@ export class AudioVisualizer {
             x += sliceWidth;
         }
 
-        this.ctx.lineTo(width, height / 2);
         this.ctx.stroke();
     }
 }

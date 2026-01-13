@@ -11,11 +11,11 @@ const state = {
   isLooping: false,
   playingIntervalIndex: null, // Track which interval is playing
   intervals: [
-    { id: '3rd', label: '3', semitones: 2, direction: 'up' },
-    { id: '5th', label: '5', semitones: 4, direction: 'up' },
-    { id: '8th', label: '8', semitones: 7, direction: 'up' },
-    { id: '10th', label: '10', semitones: 9, direction: 'up' },
-    { id: '12th', label: '12', semitones: 11, direction: 'up' }
+    { id: '3rd', label: '3', semitones: 2, direction: 'up', isPalindrome: false },
+    { id: '5th', label: '5', semitones: 4, direction: 'up', isPalindrome: false },
+    { id: '8th', label: '8', semitones: 7, direction: 'up', isPalindrome: false },
+    { id: '10th', label: '10', semitones: 9, direction: 'up', isPalindrome: false },
+    { id: '12th', label: '12', semitones: 11, direction: 'up', isPalindrome: false }
   ]
 };
 
@@ -77,10 +77,14 @@ async function playSequence(index) {
   // 1. Generate core linear sequence
   const coreSequence = getChromaticScale(startNote, interval.semitones, interval.direction);
 
-  // 2. Create Palindrome (There and Back Again)
-  // Pattern: [A, B, C] -> [...Core, ...Reversed] -> [A, B, C, C, B, A]
-  const reversed = [...coreSequence].reverse();
-  const fullSequence = [...coreSequence, ...reversed];
+  // 2. Conditional Palindrome
+  let fullSequence = coreSequence;
+
+  if (interval.isPalindrome) {
+    // Pattern: [A, B, C] -> [...Core, ...Reversed] -> [A, B, C, C, B, A]
+    const reversed = [...coreSequence].reverse();
+    fullSequence = [...coreSequence, ...reversed];
+  }
 
   // Update Sequence Display
   renderSequenceDisplay(fullSequence, startOctave);
@@ -189,6 +193,11 @@ function renderIntervals() {
           <button class="toggle-btn ${isUp ? 'active' : ''}" data-dir="up">Up</button>
           <button class="toggle-btn ${!isUp ? 'active' : ''}" data-dir="down">Down</button>
         </div>
+        <div class="toggle-group">
+            <button class="toggle-btn palindrome-btn ${interval.isPalindrome ? 'active' : ''}" data-action="toggle-pal">
+                ${interval.isPalindrome ? 'To & Fro' : 'Linear'}
+            </button>
+        </div>
         <div class="note-display">${result.note}</div>
         <button class="play-btn" data-action="play">${isPlaying ? 'Stop' : '▶'}</button>
       </div>
@@ -199,8 +208,8 @@ function renderIntervals() {
 }
 
 function attachIntervalListeners() {
-  // Toggle buttons
-  document.querySelectorAll('.toggle-btn').forEach(btn => {
+  // Toggle buttons (Up/Down)
+  document.querySelectorAll('.toggle-btn:not(.palindrome-btn)').forEach(btn => {
     btn.addEventListener('click', (e) => {
       clearSequence(); // Stop playing if user interacts
       const row = e.target.closest('.interval-row');
@@ -211,6 +220,17 @@ function attachIntervalListeners() {
         state.intervals[index].direction = newDir;
         renderIntervals();
       }
+    });
+  });
+
+  // Palindrome Toggle
+  document.querySelectorAll('.palindrome-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      clearSequence();
+      const row = e.target.closest('.interval-row');
+      const index = row.dataset.index;
+      state.intervals[index].isPalindrome = !state.intervals[index].isPalindrome;
+      renderIntervals();
     });
   });
 

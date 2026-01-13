@@ -22,10 +22,11 @@ body {
 }
 
 #app {
-  max-width: 600px;
-  width: 100%;
-  padding: 1rem;
-  box-sizing: border-box;
+  max-width: 1200px;
+  width: 95%;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
 }
 
 h1 {
